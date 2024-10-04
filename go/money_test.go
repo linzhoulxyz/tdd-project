@@ -1,49 +1,42 @@
 package main
 
 import (
+	"tdd/stocks"
 	"testing"
 )
 
-func TestMultiplicationInDollars(t *testing.T) {
-	fiver := Money{amount: 5, currency: "USD"}
-	actualResult := fiver.Times(2)
-	expectedResult := Money{amount: 10, currency: "USD"}
-	assertEqual(t, expectedResult, actualResult)
-}
-
-func TestMutiplicationInEuros(t *testing.T) {
-	tenEuros := Money{amount: 10, currency: "EUR"}
+func TestMutiplication(t *testing.T) {
+	tenEuros := stocks.NewMoney(10, "EUR")
 	actualResult := tenEuros.Times(2)
-	expectedResult := Money{amount: 20, currency: "EUR"}
+	expectedResult := stocks.NewMoney(20, "EUR")
 	assertEqual(t, expectedResult, actualResult)
 }
 
 func TestDivision(t *testing.T) {
-	originalMoney := Money{amount: 4002, currency: "KRW"}
+	originalMoney := stocks.NewMoney(4002, "KRW")
 	actualMoneyAfterDivision := originalMoney.Divide(4)
-	expectedMoneyAfterDivision := Money{amount: 1000.5, currency: "KRW"}
+	expectedMoneyAfterDivision := stocks.NewMoney(1000.5, "KRW")
 
 	assertEqual(t, expectedMoneyAfterDivision, actualMoneyAfterDivision)
 }
 
-func assertEqual(t *testing.T, expected Money, actual Money) {
+func TestAddition(t *testing.T) {
+	var portfolio stocks.Portfolio
+	var portfolioInDollars stocks.Money
+
+	fiveDollars := stocks.NewMoney(5, "USD")
+	tenDollars := stocks.NewMoney(10, "USD")
+	fifteenDollars := stocks.NewMoney(15, "USD")
+
+	portfolio = portfolio.Add(fiveDollars)
+	portfolio = portfolio.Add(tenDollars)
+	portfolioInDollars = portfolio.Evaluate("USD")
+
+	assertEqual(t, fifteenDollars, portfolioInDollars)
+}
+
+func assertEqual(t *testing.T, expected stocks.Money, actual stocks.Money) {
 	if expected != actual {
 		t.Errorf("Excepted %+v Got %+v", expected, actual)
 	}
-}
-
-type Money struct {
-	amount   float64
-	currency string
-}
-
-func (m Money) Times(mulitplier int) Money {
-	return Money{
-		amount:   m.amount * float64(mulitplier),
-		currency: m.currency,
-	}
-}
-
-func (m Money) Divide(divisor int) Money {
-	return Money{amount: m.amount / float64(divisor), currency: m.currency}
 }
