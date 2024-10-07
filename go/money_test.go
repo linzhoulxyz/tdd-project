@@ -1,9 +1,18 @@
 package main
 
 import (
+	"reflect"
 	"tdd/stocks"
 	"testing"
 )
+
+var bank stocks.Bank
+
+func init() {
+	bank = stocks.NewBank()
+	bank.AddExchangeRate("EUR", "USD", 1.2)
+	bank.AddExchangeRate("USD", "KRW", 1100)
+}
 
 func TestMutiplication(t *testing.T) {
 	tenEuros := stocks.NewMoney(10, "EUR")
@@ -22,7 +31,6 @@ func TestDivision(t *testing.T) {
 
 func TestAddition(t *testing.T) {
 	var portfolio stocks.Portfolio
-	var portfolioInDollars stocks.Money
 
 	fiveDollars := stocks.NewMoney(5, "USD")
 	tenDollars := stocks.NewMoney(10, "USD")
@@ -30,9 +38,10 @@ func TestAddition(t *testing.T) {
 
 	portfolio = portfolio.Add(fiveDollars)
 	portfolio = portfolio.Add(tenDollars)
-	portfolioInDollars, _ = portfolio.Evaluate("USD")
+	portfolioInDollars, err := portfolio.Evaluate(bank, "USD")
 
-	assertEqual(t, fifteenDollars, portfolioInDollars)
+	assertNil(t, err)
+	assertEqual(t, fifteenDollars, *portfolioInDollars)
 }
 
 func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
@@ -50,9 +59,10 @@ func TestAdditionOfDollarsAndEuros(t *testing.T) {
 	portfolio = portfolio.Add(tenEuros)
 
 	expectedValue := stocks.NewMoney(17, "USD")
-	actualValue, _ := portfolio.Evaluate("USD")
+	actualValue, err := portfolio.Evaluate(bank, "USD")
 
-	assertEqual(t, expectedValue, actualValue)
+	assertNil(t, err)
+	assertEqual(t, expectedValue, *actualValue)
 }
 
 func TestAdditionOfDollarsAndWons(t *testing.T) {
@@ -65,9 +75,10 @@ func TestAdditionOfDollarsAndWons(t *testing.T) {
 	portfolio = portfolio.Add(elevenHundredWon)
 
 	expectedValue := stocks.NewMoney(2200, "KRW")
-	actualValue, _ := portfolio.Evaluate("KRW")
+	actualValue, err := portfolio.Evaluate(bank, "KRW")
 
-	assertEqual(t, expectedValue, actualValue)
+	assertNil(t, err)
+	assertEqual(t, expectedValue, *actualValue)
 }
 
 func TestAdditiionWithMultipleMissingExchangeRates(t *testing.T) {
@@ -82,7 +93,33 @@ func TestAdditiionWithMultipleMissingExchangeRates(t *testing.T) {
 	portfolio = portfolio.Add(oneWon)
 
 	expectedErrorMessage := "Missing exchange rate(s): [USD->Kalganid,EUR->Kalganid,KRW->Kalganid,]"
-	_, actualError := portfolio.Evaluate("Kalganid")
+	actualValue, actualError := portfolio.Evaluate(bank, "Kalganid")
 
+	assertNil(t, actualValue)
 	assertEqual(t, expectedErrorMessage, actualError.Error())
+}
+
+func TestConversion(t *testing.T) {
+	bank := stocks.NewBank()
+	bank.AddExchangeRate("EUR", "USD", 1.2)
+	tenEuros := stocks.NewMoney(10, "EUR")
+	actualConvertedMoney, err := bank.Convert(tenEuros, "USD")
+	assertNil(t, err)
+	assertEqual(t, stocks.NewMoney(12, "USD"), *actualConvertedMoney)
+}
+
+func assertNil(t *testing.T, actual interface{}) {
+	if actual != nil && !reflect.ValueOf(actual).IsNil() {
+		t.Errorf("Expected error to be nil, found: [%+v]", actual)
+	}
+}
+
+func TestConversionWithMissingExchangeRate(t *testing.T) {
+	bank := stocks.NewBank()
+	tenEuros := stocks.NewMoney(10, "EUR")
+	actualConvertedMoney, err := bank.Convert(tenEuros, "Kalganid")
+	if actualConvertedMoney != nil {
+		t.Errorf("Expected money to be nil, found: [%+v]", actualConvertedMoney)
+	}
+	assertEqual(t, "EUR->Kalganid", err.Error())
 }
