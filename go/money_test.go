@@ -8,7 +8,7 @@ import (
 
 var bank stocks.Bank
 
-func init() {
+func initExchangeRates() {
 	bank = stocks.NewBank()
 	bank.AddExchangeRate("EUR", "USD", 1.2)
 	bank.AddExchangeRate("USD", "KRW", 1100)
@@ -30,6 +30,7 @@ func TestDivision(t *testing.T) {
 }
 
 func TestAddition(t *testing.T) {
+	initExchangeRates()
 	var portfolio stocks.Portfolio
 
 	fiveDollars := stocks.NewMoney(5, "USD")
@@ -51,6 +52,7 @@ func assertEqual(t *testing.T, expected interface{}, actual interface{}) {
 }
 
 func TestAdditionOfDollarsAndEuros(t *testing.T) {
+	initExchangeRates()
 	var portfolio stocks.Portfolio
 
 	fiveDollars := stocks.NewMoney(5, "USD")
@@ -66,6 +68,7 @@ func TestAdditionOfDollarsAndEuros(t *testing.T) {
 }
 
 func TestAdditionOfDollarsAndWons(t *testing.T) {
+	initExchangeRates()
 	var portfolio stocks.Portfolio
 
 	oneDollar := stocks.NewMoney(1, "USD")
@@ -82,6 +85,7 @@ func TestAdditionOfDollarsAndWons(t *testing.T) {
 }
 
 func TestAdditiionWithMultipleMissingExchangeRates(t *testing.T) {
+	initExchangeRates()
 	var portfolio stocks.Portfolio
 
 	oneDollar := stocks.NewMoney(1, "USD")
@@ -99,13 +103,17 @@ func TestAdditiionWithMultipleMissingExchangeRates(t *testing.T) {
 	assertEqual(t, expectedErrorMessage, actualError.Error())
 }
 
-func TestConversion(t *testing.T) {
-	bank := stocks.NewBank()
-	bank.AddExchangeRate("EUR", "USD", 1.2)
+func TestConversionWithDifferentRatesBetweenTwoCurrencies(t *testing.T) {
+	initExchangeRates()
 	tenEuros := stocks.NewMoney(10, "EUR")
 	actualConvertedMoney, err := bank.Convert(tenEuros, "USD")
 	assertNil(t, err)
 	assertEqual(t, stocks.NewMoney(12, "USD"), *actualConvertedMoney)
+
+	bank.AddExchangeRate("EUR", "USD", 1.3)
+	actualConvertedMoney, err = bank.Convert(tenEuros, "USD")
+	assertNil(t, err)
+	assertEqual(t, stocks.NewMoney(13, "USD"), *actualConvertedMoney)
 }
 
 func assertNil(t *testing.T, actual interface{}) {
@@ -115,6 +123,7 @@ func assertNil(t *testing.T, actual interface{}) {
 }
 
 func TestConversionWithMissingExchangeRate(t *testing.T) {
+	initExchangeRates()
 	bank := stocks.NewBank()
 	tenEuros := stocks.NewMoney(10, "EUR")
 	actualConvertedMoney, err := bank.Convert(tenEuros, "Kalganid")
